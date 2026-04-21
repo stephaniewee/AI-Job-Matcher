@@ -9,9 +9,7 @@ export default function MatchScore({ resumeText, job, onBack, onNext }) {
     const [error, setError] = useState("");
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => {
-        analyseMatch();
-    }, []);
+    useEffect(() => { analyseMatch(); }, []);
 
     async function analyseMatch() {
         setLoading(true);
@@ -55,9 +53,36 @@ ${job.description}`;
         }
     }
 
+    // Highlight missing keywords in resume text
+    function highlightResume(text, missingKeywords) {
+        if (!missingKeywords || missingKeywords.length === 0) return text;
+        let highlighted = text;
+        missingKeywords.forEach((kw) => {
+            const regex = new RegExp(`(${kw})`, "gi");
+            highlighted = highlighted.replace(regex, `<mark class="kw-missing">$1</mark>`);
+        });
+        return highlighted;
+    }
+
+    function highlightMatched(text, matchedKeywords) {
+        if (!matchedKeywords || matchedKeywords.length === 0) return text;
+        let highlighted = text;
+        matchedKeywords.forEach((kw) => {
+            const regex = new RegExp(`(${kw})`, "gi");
+            highlighted = highlighted.replace(regex, `<mark class="kw-match">$1</mark>`);
+        });
+        return highlighted;
+    }
+
+    function getHighlightedResume() {
+        let text = resumeText;
+        if (result?.matched_keywords) text = highlightMatched(text, result.matched_keywords);
+        if (result?.missing_keywords) text = highlightResume(text, result.missing_keywords);
+        return text;
+    }
+
     const circumference = 2 * Math.PI * 40;
     const offset = result ? circumference - (result.score / 100) * circumference : circumference;
-
     const scoreColor =
         !result ? "#888" :
             result.score >= 75 ? "#c8f97a" :
@@ -90,17 +115,15 @@ ${job.description}`;
 
             {result && !loading && (
                 <>
+                    {/* Score */}
                     <div className="score-section">
                         <div className="score-ring">
                             <svg width="100" height="100" viewBox="0 0 100 100">
                                 <circle cx="50" cy="50" r="40" fill="none" stroke="#2a2a2a" strokeWidth="8" />
                                 <circle
                                     cx="50" cy="50" r="40"
-                                    fill="none"
-                                    stroke={scoreColor}
-                                    strokeWidth="8"
-                                    strokeDasharray={circumference}
-                                    strokeDashoffset={offset}
+                                    fill="none" stroke={scoreColor} strokeWidth="8"
+                                    strokeDasharray={circumference} strokeDashoffset={offset}
                                     strokeLinecap="round"
                                     style={{ transform: "rotate(-90deg)", transformOrigin: "50px 50px", transition: "stroke-dashoffset 1s ease" }}
                                 />
@@ -112,6 +135,7 @@ ${job.description}`;
                         </div>
                     </div>
 
+                    {/* Keywords */}
                     <div className="two-col">
                         <div className="card">
                             <div className="card-label">Matched keywords</div>
@@ -131,6 +155,7 @@ ${job.description}`;
                         </div>
                     </div>
 
+                    {/* Gaps and Strengths */}
                     <div className="two-col">
                         <div className="card">
                             <div className="card-label">Gaps to address</div>
@@ -145,16 +170,27 @@ ${job.description}`;
                             </ul>
                         </div>
                     </div>
+
+                    {/* Keyword highlighting in resume */}
+                    <div className="card">
+                        <div className="card-label">
+                            Resume keyword highlights
+                            <span style={{ marginLeft: "12px", fontFamily: "var(--mono)" }}>
+                                <span className="legend-match">■</span> matched &nbsp;
+                                <span className="legend-miss">■</span> missing
+                            </span>
+                        </div>
+                        <pre
+                            className="resume-highlight"
+                            dangerouslySetInnerHTML={{ __html: getHighlightedResume() }}
+                        />
+                    </div>
                 </>
             )}
 
             <div className="phase-actions">
                 <button className="btn-ghost" onClick={onBack}>← Back</button>
-                <button
-                    className="btn-primary"
-                    onClick={() => onNext(result)}
-                    disabled={!result}
-                >
+                <button className="btn-primary" onClick={() => onNext(result)} disabled={!result}>
                     Tailor Resume →
                 </button>
             </div>

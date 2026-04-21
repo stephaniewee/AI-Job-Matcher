@@ -3,7 +3,7 @@ import Groq from "groq-sdk";
 
 const groq = new Groq({ apiKey: process.env.REACT_APP_GROQ_KEY, dangerouslyAllowBrowser: true });
 
-export default function TailoredResume({ resumeText, job, matchResult, onBack, onRestart }) {
+export default function TailoredResume({ resumeText, job, matchResult, onBack, onRestart, onNext }) {
     const [tailored, setTailored] = useState(null);
     const [coverLetter, setCoverLetter] = useState("");
     const [loading, setLoading] = useState(true);
@@ -11,9 +11,7 @@ export default function TailoredResume({ resumeText, job, matchResult, onBack, o
     const [copied, setCopied] = useState("");
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => {
-        tailorResume();
-    }, []);
+    useEffect(() => { tailorResume(); }, []);
 
     async function tailorResume() {
         setLoading(true);
@@ -146,7 +144,10 @@ ${job.description?.slice(0, 800)}`;
             <div className="phase-actions">
                 <button className="btn-ghost" onClick={onBack}>← Back</button>
                 <button className="btn-ghost" onClick={tailorResume} disabled={loading}>↺ Regenerate</button>
-                <button className="btn-primary" onClick={onRestart}>+ New Job</button>
+                <button className="btn-ghost" onClick={onRestart}>+ New Job</button>
+                <button className="btn-primary" onClick={onNext} disabled={!tailored}>
+                    Interview Prep →
+                </button>
             </div>
         </div>
     );
